@@ -1,0 +1,55 @@
+plugins {
+    id 'fabric-loom' version '1.17.19' apply false
+}
+
+allprojects {
+    group = project.maven_group
+    version = project.mod_version
+}
+
+// common 不是独立模组：两个模块都直接编译共享源码目录，产物各自携带（避免跨模组 remap/jiJ 复杂度）
+subprojects {
+    apply plugin: 'fabric-loom'
+
+    base {
+        archivesName = rootProject.name + '-' + project.name
+    }
+
+    sourceSets {
+        main {
+            java.srcDirs rootProject.file('common/src/main/java')
+        }
+    }
+
+    java {
+        sourceCompatibility = JavaVersion.VERSION_21
+        targetCompatibility = JavaVersion.VERSION_21
+    }
+
+    tasks.withType(JavaCompile).configureEach {
+        it.options.encoding = 'UTF-8'
+        it.options.release.set(21)
+    }
+
+    repositories {
+        maven { url 'https://maven.aliyun.com/repository/public/' }
+        mavenCentral()
+        maven { url 'https://maven.ladysnake.org/releases' }
+        maven { url 'https://maven.terraformersmc.com/releases/' }
+    }
+
+    dependencies {
+        minecraft "com.mojang:minecraft:${project.minecraft_version}"
+        mappings loom.officialMojangMappings()
+        modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
+        modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
+    }
+
+    processResources {
+        inputs.property "version", project.version
+        filteringCharset "UTF-8"
+        filesMatching("fabric.mod.json") {
+            expand "version": project.version
+        }
+    }
+}
